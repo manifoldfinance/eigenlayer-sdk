@@ -1,0 +1,4 @@
+configured_endpoints: 42
+openapi_spec_url: https://storage.googleapis.com/stainless-sdk-openapi-specs/manifoldfinance%2Fxga-068b24703dfecbf3548af866d8838d306985e2ad7adf4fef16c5a3c5febb500c.yml
+openapi_spec_hash: 6be59fad32fa2d4dfa1f3ba61b57c7a8
+config_hash: 5a1ecf103e9c0d57db1f864938bb701c
