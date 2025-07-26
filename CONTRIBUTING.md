@@ -42,15 +42,15 @@ If you’d like to use the repository from source, you can either install from g
 To install via git:
 
 ```sh
-$ npm install git+ssh://git@github.com:stainless-sdks/xga-typescript.git
+$ npm install git+ssh://git@github.com:manifoldfinance/eigenlayer-sdk.git
 ```
 
 Alternatively, to link a local copy of the repo:
 
 ```sh
 # Clone
-$ git clone https://www.github.com/stainless-sdks/xga-typescript
-$ cd xga-typescript
+$ git clone https://www.github.com/manifoldfinance/eigenlayer-sdk
+$ cd eigenlayer-sdk
 
 # With yarn
 $ yarn link
