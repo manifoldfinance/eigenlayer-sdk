@@ -4,7 +4,7 @@
 
 This library provides convenient access to the Xga REST API from server-side TypeScript or JavaScript.
 
-The REST API documentation can be found on [xga.auction](https://xga.auction). The full API of this library can be found in [api.md](api.md).
+The REST API documentation can be found on [www.eigenlayer.xyz](https://www.eigenlayer.xyz). The full API of this library can be found in [api.md](api.md).
 
 It is generated with [Stainless](https://www.stainless.com/).
 
@@ -27,11 +27,11 @@ import Xga from 'xga';
 
 const client = new Xga({
   apiKey: process.env['XGA_API_KEY'], // This is the default and can be omitted
-  bearerToken: process.env['XGA_BEARER_TOKEN'], // This is the default and can be omitted
-  environment: 'environment_1', // defaults to 'production'
 });
 
-await client.v1.system.checkHealth();
+const response = await client.rewards.v1.generateClaimProof();
+
+console.log(response.proof);
 ```
 
 ### Request & Response types
@@ -44,11 +44,9 @@ import Xga from 'xga';
 
 const client = new Xga({
   apiKey: process.env['XGA_API_KEY'], // This is the default and can be omitted
-  bearerToken: process.env['XGA_BEARER_TOKEN'], // This is the default and can be omitted
-  environment: 'environment_1', // defaults to 'production'
 });
 
-await client.v1.system.checkHealth();
+const response: Xga.Rewards.V1GenerateClaimProofResponse = await client.rewards.v1.generateClaimProof();
 ```
 
 Documentation for each method, request param, and response field are available in docstrings and will appear on hover in most modern editors.
@@ -61,7 +59,7 @@ a subclass of `APIError` will be thrown:
 
 <!-- prettier-ignore -->
 ```ts
-const response = await client.v1.system.checkHealth().catch(async (err) => {
+const response = await client.rewards.v1.generateClaimProof().catch(async (err) => {
   if (err instanceof Xga.APIError) {
     console.log(err.status); // 400
     console.log(err.name); // BadRequestError
@@ -101,7 +99,7 @@ const client = new Xga({
 });
 
 // Or, configure per-request:
-await client.v1.system.checkHealth({
+await client.rewards.v1.generateClaimProof({
   maxRetries: 5,
 });
 ```
@@ -118,7 +116,7 @@ const client = new Xga({
 });
 
 // Override per-request:
-await client.v1.system.checkHealth({
+await client.rewards.v1.generateClaimProof({
   timeout: 5 * 1000,
 });
 ```
@@ -141,13 +139,13 @@ Unlike `.asResponse()` this method consumes the body, returning once it is parse
 ```ts
 const client = new Xga();
 
-const response = await client.v1.system.checkHealth().asResponse();
+const response = await client.rewards.v1.generateClaimProof().asResponse();
 console.log(response.headers.get('X-My-Header'));
 console.log(response.statusText); // access the underlying Response object
 
-const { data: result, response: raw } = await client.v1.system.checkHealth().withResponse();
+const { data: response, response: raw } = await client.rewards.v1.generateClaimProof().withResponse();
 console.log(raw.headers.get('X-My-Header'));
-console.log(result);
+console.log(response.proof);
 ```
 
 ### Logging
@@ -227,7 +225,7 @@ parameter. This library doesn't validate at runtime that the request matches the
 send will be sent as-is.
 
 ```ts
-client.v1.system.checkHealth({
+client.rewards.v1.generateClaimProof({
   // ...
   // @ts-expect-error baz is not yet public
   baz: 'undocumented option',
