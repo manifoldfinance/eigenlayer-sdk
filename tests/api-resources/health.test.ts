@@ -4,14 +4,13 @@ import Xga from 'xga';
 
 const client = new Xga({
   apiKey: 'My API Key',
-  bearerToken: 'My Bearer Token',
   baseURL: process.env['TEST_API_BASE_URL'] ?? 'http://127.0.0.1:4010',
 });
 
-describe('resource results', () => {
+describe('resource health', () => {
   // skipped: tests are disabled for the time being
-  test.skip('getLatest', async () => {
-    const responsePromise = client.v1.auctions.results.getLatest();
+  test.skip('check', async () => {
+    const responsePromise = client.health.check();
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;

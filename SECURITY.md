@@ -20,7 +20,7 @@ or products provided by Xga, please follow the respective company's security rep
 
 ### Xga Terms and Policies
 
-Please contact support@xga.auction for any questions or concerns regarding the security of our services.
+Please contact info@eigenlayer.xyz for any questions or concerns regarding the security of our services.
 
 ---
 

@@ -16,7 +16,8 @@ import * as Errors from './core/error';
 import * as Uploads from './core/uploads';
 import * as API from './resources/index';
 import { APIPromise } from './core/api-promise';
-import { V1 } from './resources/v1/v1';
+import { Health, HealthCheckResponse } from './resources/health';
+import { Rewards } from './resources/rewards/rewards';
 import { type Fetch } from './internal/builtin-types';
 import { HeadersLike, NullableHeaders, buildHeaders } from './internal/headers';
 import { FinalRequestOptions, RequestOptions } from './internal/request-options';
@@ -30,31 +31,11 @@ import {
 } from './internal/utils/log';
 import { isEmptyObj } from './internal/utils/values';
 
-const environments = {
-  production: 'http://localhost:3000',
-  environment_1: 'https://api.xga.auction',
-};
-type Environment = keyof typeof environments;
-
 export interface ClientOptions {
   /**
-   * API key for service authentication
+   * Defaults to process.env['XGA_API_KEY'].
    */
-  apiKey?: string | undefined;
-
-  /**
-   * JWT token for user authentication
-   */
-  bearerToken?: string | undefined;
-
-  /**
-   * Specifies the environment to use for the API.
-   *
-   * Each environment maps to a different base URL:
-   * - `production` corresponds to `http://localhost:3000`
-   * - `environment_1` corresponds to `https://api.xga.auction`
-   */
-  environment?: Environment | undefined;
+  apiKey?: string | null | undefined;
 
   /**
    * Override the default base URL for the API, e.g., "https://api.example.com/v2/"
@@ -129,8 +110,7 @@ export interface ClientOptions {
  * API Client for interfacing with the Xga API.
  */
 export class Xga {
-  apiKey: string;
-  bearerToken: string;
+  apiKey: string | null;
 
   baseURL: string;
   maxRetries: number;
@@ -147,10 +127,8 @@ export class Xga {
   /**
    * API Client for interfacing with the Xga API.
    *
-   * @param {string | undefined} [opts.apiKey=process.env['XGA_API_KEY'] ?? undefined]
-   * @param {string | undefined} [opts.bearerToken=process.env['XGA_BEARER_TOKEN'] ?? undefined]
-   * @param {Environment} [opts.environment=production] - Specifies the environment URL to use for the API.
-   * @param {string} [opts.baseURL=process.env['XGA_BASE_URL'] ?? http://localhost:3000] - Override the default base URL for the API.
+   * @param {string | null | undefined} [opts.apiKey=process.env['XGA_API_KEY'] ?? null]
+   * @param {string} [opts.baseURL=process.env['XGA_BASE_URL'] ?? https://api.example.com] - Override the default base URL for the API.
    * @param {number} [opts.timeout=1 minute] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
    * @param {MergedRequestInit} [opts.fetchOptions] - Additional `RequestInit` options to be passed to `fetch` calls.
    * @param {Fetch} [opts.fetch] - Specify a custom `fetch` function implementation.
@@ -160,36 +138,16 @@ export class Xga {
    */
   constructor({
     baseURL = readEnv('XGA_BASE_URL'),
-    apiKey = readEnv('XGA_API_KEY'),
-    bearerToken = readEnv('XGA_BEARER_TOKEN'),
+    apiKey = readEnv('XGA_API_KEY') ?? null,
     ...opts
   }: ClientOptions = {}) {
-    if (apiKey === undefined) {
-      throw new Errors.XgaError(
-        "The XGA_API_KEY environment variable is missing or empty; either provide it, or instantiate the Xga client with an apiKey option, like new Xga({ apiKey: 'My API Key' }).",
-      );
-    }
-    if (bearerToken === undefined) {
-      throw new Errors.XgaError(
-        "The XGA_BEARER_TOKEN environment variable is missing or empty; either provide it, or instantiate the Xga client with an bearerToken option, like new Xga({ bearerToken: 'My Bearer Token' }).",
-      );
-    }
-
     const options: ClientOptions = {
       apiKey,
-      bearerToken,
       ...opts,
-      baseURL,
-      environment: opts.environment ?? 'production',
+      baseURL: baseURL || `https://api.example.com`,
     };
 
-    if (baseURL && opts.environment) {
-      throw new Errors.XgaError(
-        'Ambiguous URL; The `baseURL` option (or XGA_BASE_URL env var) and the `environment` option are given. If you want to use the environment you must pass baseURL: null',
-      );
-    }
-
-    this.baseURL = options.baseURL || environments[options.environment || 'production'];
+    this.baseURL = options.baseURL!;
     this.timeout = options.timeout ?? Xga.DEFAULT_TIMEOUT /* 1 minute */;
     this.logger = options.logger ?? console;
     const defaultLogLevel = 'warn';
@@ -207,7 +165,6 @@ export class Xga {
     this._options = options;
 
     this.apiKey = apiKey;
-    this.bearerToken = bearerToken;
   }
 
   /**
@@ -216,8 +173,7 @@ export class Xga {
   withOptions(options: Partial<ClientOptions>): this {
     const client = new (this.constructor as any as new (props: ClientOptions) => typeof this)({
       ...this._options,
-      environment: options.environment ? options.environment : undefined,
-      baseURL: options.environment ? undefined : this.baseURL,
+      baseURL: this.baseURL,
       maxRetries: this.maxRetries,
       timeout: this.timeout,
       logger: this.logger,
@@ -225,7 +181,6 @@ export class Xga {
       fetch: this.fetch,
       fetchOptions: this.fetchOptions,
       apiKey: this.apiKey,
-      bearerToken: this.bearerToken,
       ...options,
     });
     return client;
@@ -235,7 +190,7 @@ export class Xga {
    * Check whether the base URL is set to its default.
    */
   #baseURLOverridden(): boolean {
-    return this.baseURL !== environments[this._options.environment || 'production'];
+    return this.baseURL !== 'https://api.example.com';
   }
 
   protected defaultQuery(): Record<string, string | undefined> | undefined {
@@ -243,19 +198,23 @@ export class Xga {
   }
 
   protected validateHeaders({ values, nulls }: NullableHeaders) {
-    return;
+    if (this.apiKey && values.get('authorization')) {
+      return;
+    }
+    if (nulls.has('authorization')) {
+      return;
+    }
+
+    throw new Error(
+      'Could not resolve authentication method. Expected the apiKey to be set. Or for the "Authorization" headers to be explicitly omitted',
+    );
   }
 
   protected async authHeaders(opts: FinalRequestOptions): Promise<NullableHeaders | undefined> {
-    return buildHeaders([await this.apiKeyAuth(opts), await this.bearerAuth(opts)]);
-  }
-
-  protected async apiKeyAuth(opts: FinalRequestOptions): Promise<NullableHeaders | undefined> {
-    return buildHeaders([{ 'x-api-key': this.apiKey }]);
-  }
-
-  protected async bearerAuth(opts: FinalRequestOptions): Promise<NullableHeaders | undefined> {
-    return buildHeaders([{ Authorization: `Bearer ${this.bearerToken}` }]);
+    if (this.apiKey == null) {
+      return undefined;
+    }
+    return buildHeaders([{ Authorization: `Bearer ${this.apiKey}` }]);
   }
 
   /**
@@ -762,11 +721,15 @@ export class Xga {
 
   static toFile = Uploads.toFile;
 
-  v1: API.V1 = new API.V1(this);
+  rewards: API.Rewards = new API.Rewards(this);
+  health: API.Health = new API.Health(this);
 }
-Xga.V1 = V1;
+Xga.Rewards = Rewards;
+Xga.Health = Health;
 export declare namespace Xga {
   export type RequestOptions = Opts.RequestOptions;
 
-  export { V1 as V1 };
+  export { Rewards as Rewards };
+
+  export { Health as Health, type HealthCheckResponse as HealthCheckResponse };
 }
