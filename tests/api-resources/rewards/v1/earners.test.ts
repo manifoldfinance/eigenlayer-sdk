@@ -8,7 +8,7 @@ const client = new Xga({
 });
 
 describe('resource earners', () => {
-  // skipped: tests are disabled for the time being
+  // Prism tests are disabled
   test.skip('getSummarizedRewards', async () => {
     const responsePromise = client.rewards.v1.earners.getSummarizedRewards('earner_address');
     const rawResponse = await responsePromise.asResponse();
@@ -20,7 +20,7 @@ describe('resource earners', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // skipped: tests are disabled for the time being
+  // Prism tests are disabled
   test.skip('getSummarizedRewards: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
