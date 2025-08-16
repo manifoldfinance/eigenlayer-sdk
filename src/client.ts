@@ -724,8 +724,10 @@ export class Xga {
   rewards: API.Rewards = new API.Rewards(this);
   health: API.Health = new API.Health(this);
 }
+
 Xga.Rewards = Rewards;
 Xga.Health = Health;
+
 export declare namespace Xga {
   export type RequestOptions = Opts.RequestOptions;
 
