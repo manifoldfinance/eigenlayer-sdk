@@ -375,7 +375,7 @@ export class Xga {
     const response = await this.fetchWithTimeout(url, req, timeout, controller).catch(castToError);
     const headersTime = Date.now();
 
-    if (response instanceof Error) {
+    if (response instanceof globalThis.Error) {
       const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
       if (options.signal?.aborted) {
         throw new Errors.APIUserAbortError();
@@ -682,7 +682,7 @@ export class Xga {
         // Preserve legacy string encoding behavior for now
         headers.values.has('content-type')) ||
       // `Blob` is superset of `File`
-      body instanceof Blob ||
+      ((globalThis as any).Blob && body instanceof (globalThis as any).Blob) ||
       // `FormData` -> `multipart/form-data`
       body instanceof FormData ||
       // `URLSearchParams` -> `application/x-www-form-urlencoded`
@@ -724,8 +724,10 @@ export class Xga {
   rewards: API.Rewards = new API.Rewards(this);
   health: API.Health = new API.Health(this);
 }
+
 Xga.Rewards = Rewards;
 Xga.Health = Health;
+
 export declare namespace Xga {
   export type RequestOptions = Opts.RequestOptions;
 

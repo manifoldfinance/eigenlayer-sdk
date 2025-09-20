@@ -8,7 +8,7 @@ const client = new Xga({
 });
 
 describe('resource v1', () => {
-  // skipped: tests are disabled for the time being
+  // Prism tests are disabled
   test.skip('generateClaimProof', async () => {
     const responsePromise = client.rewards.v1.generateClaimProof({});
     const rawResponse = await responsePromise.asResponse();
@@ -20,7 +20,7 @@ describe('resource v1', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // skipped: tests are disabled for the time being
+  // Prism tests are disabled
   test.skip('listDistributionRoots', async () => {
     const responsePromise = client.rewards.v1.listDistributionRoots();
     const rawResponse = await responsePromise.asResponse();
